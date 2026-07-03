@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.47.0] - 2026-07-02
+
+- [941fabf](https://github.com/codeaholicguy/ai-devkit/pull/130) Added Grok environment skills support.
+- [4206681](https://github.com/codeaholicguy/ai-devkit/pull/129) Added the Grok Build CLI adapter.
+- [aa972da](https://github.com/codeaholicguy/ai-devkit/pull/134) Added Antigravity CLI environment support.
+- [fbf4bf7](https://github.com/codeaholicguy/ai-devkit/pull/132) Added the durable task system with append-only event history.
+- [8ecb865](https://github.com/codeaholicguy/ai-devkit/pull/131) Added the built-in task skill for CLI-driven lifecycle/debug progress tracking.
+- [5c69c3a](https://github.com/codeaholicguy/ai-devkit/commit/5c69c3a15ed52cc52935459ada80a4cded1468d9) Updated `better-sqlite3` to 12.11.1.
+
+## [0.46.0] - 2026-06-30
+
+- [172ef94](https://github.com/codeaholicguy/ai-devkit/pull/126) Added Claude PreToolUse forwarding to Telegram for tool invocations.
+- [61a6633](https://github.com/codeaholicguy/ai-devkit/commit/61a6633c985759db812e8bccf77bfc8129253d4a) Updated the Claude Code hook configuration.
+- [7fa1ff](https://github.com/codeaholicguy/ai-devkit/pull/128) Added WezTerm terminal support to agent manager.
+- [70c86c9](https://github.com/codeaholicguy/ai-devkit/pull/127) Rendered Claude AskUserQuestion prompts as Telegram inline keyboards.
+
+## [0.44.1] - 2026-06-29
+
+- [fb66494](https://github.com/codeaholicguy/ai-devkit/pull/123) Fixed tmux send body delivery by using bracketed paste.
+- [d75ab3b](https://github.com/codeaholicguy/ai-devkit/pull/125) Fixed Telegram markdown delivery by chunking messages before rendering.
+
+## [0.44.0] - 2026-06-27
+
+- [f7d1144](https://github.com/codeaholicguy/ai-devkit/pull/117) Fixed Telegram delivery reliability.
+- [e638fdf](https://github.com/codeaholicguy/ai-devkit/pull/118) Removed `updatedAt` from new project config writes.
+- [291ffdf](https://github.com/codeaholicguy/ai-devkit/pull/119) Removed the install artifact overwrite prompt.
+- [76887e6](https://github.com/codeaholicguy/ai-devkit/pull/120) Added the `dev-commit` workflow skill.
+- [05581dd](https://github.com/codeaholicguy/ai-devkit/pull/121) Added the `dev-pr` workflow skill.
+- [e04ae44](https://github.com/codeaholicguy/ai-devkit/commit/e04ae44c2bbf842b58242f0c3e1c5c78bc1ab1d2) Installed built-in skills during agent setup.
+
+## [0.43.0] - 2026-06-26
+
+- [997ef2d](https://github.com/codeaholicguy/ai-devkit/commit/997ef2dce2db45acfc18217e5ab352fcdb0122f4) Added the `agent-management` built-in skill.
+- [0b1cc33](https://github.com/codeaholicguy/ai-devkit/pull/116) Added the Codex session mapping hook.
+- [3b5b99c](https://github.com/codeaholicguy/ai-devkit/commit/3b5b99c18053d81b910d7776a98a70c4c77620a1) Added the `agent setup` CLI command.
+
+## [0.42.1] - 2026-06-25
+
+- [8e5e745](https://github.com/codeaholicguy/ai-devkit/commit/8e5e74553ce483fddd5d3150c6464aad957c3930) Fixed Claude agent start timeout handling.
+
 ## [0.42.0] - 2026-06-17
 
 - [676bd04](https://github.com/codeaholicguy/ai-devkit/commit/676bd041aa9e8f4a684b6a1dc5731af866b8abb3) Fixed `dev-lifecycle` startup guidance to list installed skills.

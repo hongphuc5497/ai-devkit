@@ -19,12 +19,23 @@ describe('CLI basics', () => {
     expect(result.stdout).toContain('memory');
     expect(result.stdout).toContain('skill');
     expect(result.stdout).toContain('phase');
-    expect(result.stdout).not.toContain('setup');
+    expect(result.stdout).toContain('setup');
   });
 
-  it('should not expose removed workflow command setup', () => {
-    const result = run('setup');
-    expect(result.exitCode).not.toBe(0);
+  it('should run setup against an isolated home directory', () => {
+    const homeDir = mkdtempSync(join(tmpdir(), 'ai-devkit-setup-e2e-home-'));
+
+    try {
+      const result = run('setup', { env: { HOME: homeDir } });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Setup Summary');
+      expect(result.stdout).toContain('codex');
+      expect(result.stdout).toContain('~/.codex does not exist.');
+      expect(result.stdout).toContain('pi');
+      expect(result.stdout).toContain('~/.pi does not exist.');
+    } finally {
+      rmSync(homeDir, { recursive: true, force: true });
+    }
   });
 
   it('should exit with error for unknown command', () => {
@@ -207,8 +218,7 @@ describe('memory commands', () => {
       memory: {
         path: '.ai-devkit/memory.db'
       },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     });
   });
 
@@ -335,8 +345,7 @@ describe('install command', () => {
       version: '1.0.0',
       environments: ['claude'],
       phases: ['requirements', 'design'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     });
 
     const result = run('install', { cwd: projectDir });
@@ -359,8 +368,7 @@ describe('install command', () => {
       skills: [
         { registry: 'codeaholicguy/ai-devkit', name: 'dev-lifecycle' }
       ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     });
 
     const result = run('install', { cwd: projectDir });
@@ -398,8 +406,7 @@ describe('skill command', () => {
         skills: [
           { registry: 'codeaholicguy/ai-devkit', name: 'dev-lifecycle' }
         ],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: new Date().toISOString()
       });
 
       // Create the skill directory so the remove command finds it
@@ -427,8 +434,7 @@ describe('skill command', () => {
           { registry: 'codeaholicguy/ai-devkit', name: 'dev-lifecycle' },
           { registry: 'codeaholicguy/ai-devkit', name: 'memory' }
         ],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: new Date().toISOString()
       });
 
       const skillDir = join(projectDir, '.claude', 'skills', 'dev-lifecycle');

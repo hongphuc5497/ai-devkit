@@ -11,6 +11,7 @@ import {
     CodexAdapter,
     CopilotAdapter,
     GeminiCliAdapter,
+    GrokCliAdapter,
     OpenCodeAdapter,
     PiAdapter,
     AgentStatus,
@@ -28,6 +29,7 @@ import {
 } from '@ai-devkit/agent-manager';
 import { ui } from '../util/terminal-ui.js';
 import { withErrorHandler } from '../util/errors.js';
+import { enableDebug, createLogger } from '../util/debug.js';
 import {
     formatFirstMessage,
     parseLimit,
@@ -88,6 +90,7 @@ const TYPE_LABELS: Record<AgentType, string> = {
     codex: 'Codex',
     copilot: 'Copilot',
     gemini_cli: 'Gemini CLI',
+    grok_cli: 'Grok CLI',
     opencode: 'OpenCode',
     pi: 'Pi',
     other: 'Other',
@@ -170,6 +173,7 @@ function createAgentManager(): AgentManager {
     manager.registerAdapter(new CodexAdapter());
     manager.registerAdapter(new CopilotAdapter());
     manager.registerAdapter(new GeminiCliAdapter());
+    manager.registerAdapter(new GrokCliAdapter());
     manager.registerAdapter(new OpenCodeAdapter());
     manager.registerAdapter(new PiAdapter());
     return manager;
@@ -245,7 +249,11 @@ export function registerAgentCommand(program: Command): void {
         .requiredOption('--type <type>', `Agent type: ${Object.keys(AGENTS).join(', ')}`)
         .option('--name <name>', 'Human-readable name for the agent (lowercase alphanumeric + hyphens, 2-64 chars; default: {folder}-{timestamp})')
         .option('--cwd <path>', 'Working directory for the agent (default: current directory)')
+        .option('--debug', 'Enable debug logging')
         .action(withErrorHandler('start agent', async (options) => {
+            if (options.debug) {
+                enableDebug();
+            }
             const agentType = options.type as string;
             const cwd = path.resolve(options.cwd ?? process.cwd());
             const agentName = (options.name as string | undefined) ?? generateAgentName(cwd);
@@ -351,10 +359,10 @@ export function registerAgentCommand(program: Command): void {
 
     agentCommand
         .command('sessions')
-        .description('List historical Claude/Codex/Gemini/OpenCode sessions for resume')
+        .description('List historical Claude/Codex/Gemini/Grok/OpenCode sessions for resume')
         .option('--all', 'Include sessions from every cwd (default: only current cwd)')
         .option('--cwd <path>', 'Override the cwd filter (implies non-default scope)')
-        .option('--type <type>', 'Filter to one of: claude, codex, gemini_cli, opencode, copilot, pi')
+        .option('--type <type>', 'Filter to one of: claude, codex, gemini_cli, grok_cli, opencode, copilot, pi')
         .option('--limit <n>', 'Max rows to print (default: 50; 0 = no limit)', '50')
         .option('-j, --json', 'Output as JSON')
         .action(withErrorHandler('list sessions', async (options) => {
@@ -410,7 +418,7 @@ export function registerAgentCommand(program: Command): void {
         .description('Show detailed information about a historical session')
         .requiredOption('--id <sessionId>', 'Session ID (as shown in agent sessions)')
         .option('-j, --json', 'Output as JSON')
-        .option('--type <type>', 'Filter to one of: claude, codex, gemini_cli, opencode, copilot, pi')
+        .option('--type <type>', 'Filter to one of: claude, codex, gemini_cli, grok_cli, opencode, copilot, pi')
         .option('--full', 'Show entire conversation history')
         .option('--tail <n>', 'Show last N messages (default: 20)', '20')
         .option('--verbose', 'Include tool call/result details')
@@ -475,9 +483,19 @@ export function registerAgentCommand(program: Command): void {
     agentCommand
         .command('open <name>')
         .description('Focus a running agent terminal')
-        .action(withErrorHandler('open agent', async (name) => {
+        .option('--debug', 'Trace how the agent terminal is resolved and focused')
+        .action(withErrorHandler('open agent', async (name, options) => {
+            const terminalLogger = options.debug ? createLogger('terminal') : undefined;
+            if (options.debug) {
+                enableDebug();
+            }
             const manager = createAgentManager();
-            const focusManager = new TerminalFocusManager();
+            // When --debug is set, route the focus manager's decision trace to
+            // the ai-devkit:terminal debug logger (enabled above) so users can
+            // see which terminal matched and how focus was attempted.
+            const focusManager = new TerminalFocusManager(
+                terminalLogger ? (message: string) => terminalLogger(message) : undefined,
+            );
 
             const agents = await manager.listAgents();
             if (agents.length === 0) {

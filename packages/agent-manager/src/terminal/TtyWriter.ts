@@ -6,6 +6,19 @@ import { escapeAppleScript } from '../utils/applescript.js';
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * Carriage return byte (0x0d). Sent as a fixed discrete argv element with
+ * `--no-paste` to deliver Enter literally (shell equivalent: $'\x0d').
+ */
+const CARRIAGE_RETURN = '\x0d';
+
+/**
+ * Escape byte (0x1b). Recognized by `sendKey` and translated to the
+ * backend-native representation (`Escape` for tmux, `key code 53` for
+ * AppleScript, the literal byte for WezTerm).
+ */
+const ESCAPE_BYTE = '\x1b';
+
 export class TtyWriter {
     /**
      * Send a message as keyboard input to a terminal session.
@@ -26,6 +39,8 @@ export class TtyWriter {
         switch (location.type) {
             case TerminalType.TMUX:
                 return TtyWriter.sendViaTmux(location.identifier, message);
+            case TerminalType.WEZTERM:
+                return TtyWriter.sendViaWezterm(location.identifier, message);
             case TerminalType.ITERM2:
                 return TtyWriter.sendViaITerm2(location.tty, message);
             case TerminalType.TERMINAL_APP:
@@ -33,20 +48,172 @@ export class TtyWriter {
             default:
                 throw new Error(
                     `Cannot send input: unsupported terminal type "${location.type}". ` +
-                    'Supported: tmux, iTerm2, Terminal.app.'
+                    'Supported: tmux, WezTerm, iTerm2, Terminal.app.'
                 );
         }
     }
 
+    /**
+     * Send a single raw key (e.g. "1", "Enter", "Up") to the terminal as a
+     * keystroke — bypassing bracketed paste and without auto-appending Enter.
+     *
+     * Use this when the target TUI distinguishes between typed text and raw
+     * keypresses (e.g. an `AskUserQuestion` picker that selects on digit-key
+     * press, not on a pasted digit followed by Enter).
+     *
+     * - tmux: `tmux send-keys -t <id> <key>` — direct keystroke, no paste buffer.
+     * - WezTerm: `wezterm cli send-text --pane-id <id> --no-paste <key>`.
+     * - iTerm2 / Terminal.app: AppleScript via System Events. Requires
+     *   Accessibility permissions.
+     */
+    static async sendKey(location: TerminalLocation, key: string): Promise<void> {
+        switch (location.type) {
+            case TerminalType.TMUX:
+                return TtyWriter.sendKeyViaTmux(location.identifier, key);
+            case TerminalType.WEZTERM:
+                return TtyWriter.sendKeyViaWezterm(location.identifier, key);
+            case TerminalType.ITERM2:
+                return TtyWriter.sendKeyViaITerm2(location.tty, key);
+            case TerminalType.TERMINAL_APP:
+                return TtyWriter.sendKeyViaTerminalApp(location.tty, key);
+            default:
+                throw new Error(
+                    `Cannot send key: unsupported terminal type "${location.type}". ` +
+                    'Supported: tmux, WezTerm, iTerm2, Terminal.app.'
+                );
+        }
+    }
+
+    private static async sendKeyViaTmux(identifier: string, key: string): Promise<void> {
+        // tmux send-keys interprets named keys (Enter, Up, Escape, ...) and
+        // passes literals through. No bracketed paste, no auto-Enter.
+        const arg = key === ESCAPE_BYTE ? 'Escape' : key;
+        await execFileAsync('tmux', ['send-keys', '-t', identifier, arg]);
+    }
+
+    private static async sendKeyViaWezterm(paneId: string, key: string): Promise<void> {
+        // --no-paste delivers the key bytes literally outside bracketed-paste
+        // markers; the TUI sees a raw keystroke. For Esc (`\x1b`), wezterm
+        // accepts the byte directly.
+        await execFileAsync('wezterm', [
+            'cli', 'send-text', '--pane-id', paneId, '--no-paste', key,
+        ]);
+    }
+
+    private static async sendKeyViaITerm2(tty: string, key: string): Promise<void> {
+        // Focus the target session, then press the key via System Events so the
+        // inner TUI sees a raw keystroke (not a bracketed-paste text run).
+        const action = appleScriptKeyAction(key);
+        const script = `
+tell application "iTerm"
+  set targetSession to missing value
+  repeat with w in windows
+    repeat with t in tabs of w
+      repeat with s in sessions of t
+        if tty of s is "${tty}" then
+          set targetSession to s
+          set frontmost of w to true
+          tell t to select
+          tell s to select
+          exit repeat
+        end if
+      end repeat
+      if targetSession is not missing value then exit repeat
+    end repeat
+    if targetSession is not missing value then exit repeat
+  end repeat
+  if targetSession is missing value then return "not_found"
+  activate
+end tell
+tell application "System Events" to ${action}
+return "ok"`;
+
+        const { stdout } = await execFileAsync('osascript', ['-e', script]);
+        if (stdout.trim() !== 'ok') {
+            throw new Error(`iTerm2 session not found for TTY ${tty}`);
+        }
+    }
+
+    private static async sendKeyViaTerminalApp(tty: string, key: string): Promise<void> {
+        const action = appleScriptKeyAction(key);
+        const script = `
+tell application "Terminal"
+  set targetTab to missing value
+  set targetWindow to missing value
+  repeat with w in windows
+    repeat with i from 1 to count of tabs of w
+      set t to tab i of w
+      if tty of t is "${tty}" then
+        set targetTab to t
+        set targetWindow to w
+        exit repeat
+      end if
+    end repeat
+    if targetTab is not missing value then exit repeat
+  end repeat
+  if targetTab is missing value then return "not_found"
+  set selected of targetTab to true
+  set frontmost of targetWindow to true
+  activate
+end tell
+tell application "System Events" to ${action}
+return "ok"`;
+
+        const { stdout } = await execFileAsync('osascript', ['-e', script]);
+        if (stdout.trim() !== 'ok') {
+            throw new Error(`Terminal.app tab not found for TTY ${tty}`);
+        }
+    }
+
+    private static async sendViaWezterm(paneId: string, message: string): Promise<void> {
+        // Two explicit CLI calls, mirroring the text-then-Enter convention used
+        // by tmux / iTerm2 / Terminal.app so a bracketed-paste-aware TUI still
+        // sees Enter as a submit.
+        //
+        // Step 1 (text): write the message to stdin so prompt contents are not
+        // exposed through process arguments. execFile still spawns wezterm
+        // directly (no shell), so shell metacharacters remain inert.
+        // Step 2 (Enter): pass a fixed carriage return (0x0d) as a discrete
+        // argv element (the JS char '\x0d') with --no-paste, so the CR is
+        // delivered literally rather than wrapped in paste brackets. The
+        // equivalent shell command is:
+        //   wezterm cli send-text --pane-id <id> --no-paste $'\x0d'
+        // (ANSI-C quoting, note the leading $).
+        await TtyWriter.execFileWithInput('wezterm', [
+            'cli', 'send-text', '--pane-id', paneId,
+        ], message);
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        await execFileAsync('wezterm', [
+            'cli', 'send-text', '--pane-id', paneId, '--no-paste', CARRIAGE_RETURN,
+        ]);
+    }
+
     private static async sendViaTmux(identifier: string, message: string): Promise<void> {
-        // Send text and Enter as two separate calls so that Enter arrives
-        // outside of bracketed paste mode. When the inner application (e.g.
-        // Claude Code) has bracketed paste enabled, tmux wraps the send-keys
-        // payload in paste brackets — if Enter is included, it gets swallowed
-        // as part of the paste instead of acting as a submit action.
-        await execFileAsync('tmux', ['send-keys', '-t', identifier, '-l', message]);
+        // Paste the message body using tmux bracketed paste, then send Enter as
+        // a separate key so the inner TUI treats it as submission rather than
+        // pasted content.
+        const bufferName = `ai-devkit-send-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        await TtyWriter.execFileWithInput('tmux', ['load-buffer', '-b', bufferName, '-'], message);
+        await execFileAsync('tmux', ['paste-buffer', '-t', identifier, '-b', bufferName, '-p', '-d']);
         await new Promise((resolve) => setTimeout(resolve, 150));
         await execFileAsync('tmux', ['send-keys', '-t', identifier, 'Enter']);
+    }
+
+    private static async execFileWithInput(command: string, args: string[], input: string): Promise<void> {
+        await new Promise<void>((resolve, reject) => {
+            const child = execFile(command, args, (error) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve();
+            });
+            if (!child.stdin) {
+                reject(new Error(`Cannot write stdin to ${command}`));
+                return;
+            }
+            child.stdin.end(input);
+        });
     }
 
     /**
@@ -157,4 +324,14 @@ return "ok"`;
             throw new Error(`Terminal.app tab disappeared before Enter could be sent for TTY ${tty}`);
         }
     }
+}
+
+/**
+ * AppleScript `keystroke` only delivers typeable characters; non-typeable
+ * keys (Esc, arrows, F-keys, …) must be sent via `key code <N>`. Add more
+ * mappings here as new special keys are needed.
+ */
+function appleScriptKeyAction(key: string): string {
+    if (key === ESCAPE_BYTE) return 'key code 53';
+    return `keystroke "${escapeAppleScript(key)}"`;
 }

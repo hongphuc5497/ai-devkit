@@ -7,7 +7,7 @@ order: 7
 
 **Skills** are reusable instruction packs that extend what your AI coding agents can do. Each skill teaches an agent a specific workflow or domain practice, such as frontend design, database optimization, security review, or multi-agent coordination.
 
-> **Note:** AI DevKit reads your project configuration from `.ai-devkit.json`. If this file doesn't exist when you run `skill add`, you'll be prompted to select which AI environments to configure. Skills require at least one skill-capable environment (Cursor, Claude Code, GitHub Copilot, Codex, opencode, Antigravity, Junie, Cline, Devin, Pi, Kilo Code, or Roo Code).
+> **Note:** AI DevKit reads your project configuration from `.ai-devkit.json`. If this file doesn't exist when you run `skill add`, you'll be prompted to select which AI environments to configure. Skills require at least one skill-capable environment (Cursor, Claude Code, GitHub Copilot, Codex, opencode, Antigravity, Junie, Cline, Devin, Grok, Pi, Kilo Code, or Roo Code).
 
 ## How Skills Work
 
@@ -27,8 +27,9 @@ AI DevKit ships with a core set of skills in its default registry:
 |---|---|
 | `agent-orchestration` | Coordinate running AI agents and manage multi-agent workflows |
 | `document-code` | Document code entry points with structured analysis and dependency mapping |
+| `dev-commit` | Commit only intended, verified changes with a conventional message |
 | `dev-lifecycle` | Orchestrate the SDLC workflow and route to phase skills |
-| `dev-worktree`, `dev-requirements`, `dev-design`, `dev-planning`, `dev-implementation`, `dev-testing`, `dev-review` | Run focused SDLC phases directly |
+| `dev-worktree`, `dev-requirements`, `dev-design`, `dev-planning`, `dev-implementation`, `dev-testing`, `dev-review`, `dev-pr` | Run focused SDLC and publish-for-review phases directly |
 | `structured-debug` | Follow a disciplined debugging and RCA process before implementing fixes |
 | `memory` | Use AI DevKit memory operations via CLI patterns when needed |
 | `simplify-implementation` | Simplify and refactor complex code paths for maintainability |
@@ -68,9 +69,11 @@ Skills are currently supported by the following AI coding agents:
 | **Codex**       | `.agents/skills`   | `~/.codex/skills` |
 | **opencode**    | `.opencode/skills` | `~/.config/opencode/skills` |
 | **Antigravity** | `.agent/skills`    | `~/.gemini/antigravity/skills` |
+| **Antigravity CLI** | `.agents/skills` | `~/.gemini/config/skills` |
 | **Junie**       | `.junie/skills`    | `~/.junie/skills` |
 | **Cline**       | `.cline/skills`    | `~/.cline/skills` |
 | **Devin**       | `.devin/skills`    | `~/.config/devin/skills` |
+| **Grok**        | `.grok/skills`     | `~/.grok/skills` |
 | **Pi**          | `.pi/skills`       | `~/.pi/agent/skills` |
 | **Kilo Code**   | `.kilo/skills`     | `~/.kilo/skills` |
 | **Roo Code**    | `.roo/skills`      | `~/.roo/skills` |
@@ -454,7 +457,7 @@ The skill doesn't exist in the specified registry. Explore the registry reposito
 
 ### "No skill-capable environments configured"
 
-Your project doesn't have any skill-compatible environments. Run `ai-devkit init` and select an environment that supports skills (Cursor, Claude Code, GitHub Copilot, Codex, opencode, Antigravity, Junie, Cline, Devin, Pi, Kilo Code, or Roo Code).
+Your project doesn't have any skill-compatible environments. Run `ai-devkit init` and select an environment that supports skills (Cursor, Claude Code, GitHub Copilot, Codex, opencode, Antigravity, Junie, Cline, Devin, Grok, Pi, Kilo Code, or Roo Code).
 
 ### "SKILL.md not found"
 

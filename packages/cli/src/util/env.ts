@@ -27,6 +27,12 @@ export const ENVIRONMENT_DEFINITIONS: Record<EnvironmentCode, EnvironmentDefinit
     skillPath: '.gemini/skills',
     globalSkillPath: '.gemini/skills',
   },
+  grok: {
+    code: 'grok',
+    name: 'Grok',
+    skillPath: '.grok/skills',
+    globalSkillPath: '.grok/skills',
+  },
   codex: {
     code: 'codex',
     name: 'OpenAI Codex',
@@ -66,6 +72,14 @@ export const ENVIRONMENT_DEFINITIONS: Record<EnvironmentCode, EnvironmentDefinit
     name: 'Antigravity',
     skillPath: '.agent/skills',
     globalSkillPath: '.gemini/antigravity/skills',
+  },
+  'antigravity-cli': {
+    code: 'antigravity-cli',
+    name: 'Antigravity CLI',
+    // The `agy` CLI reads project skills from <workspace>/.agents/skills and
+    // user-global skills from ~/.gemini/config/skills.
+    skillPath: '.agents/skills',
+    globalSkillPath: '.gemini/config/skills',
   },
   junie: {
     code: 'junie',

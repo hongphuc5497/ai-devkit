@@ -178,6 +178,20 @@ export const builtInSkills: BuiltInSkill[] = [
     relatedAgents: ["Claude Code", "Codex"],
   },
   {
+    name: "dev-commit",
+    title: "Dev Commit",
+    category: "Workflow",
+    summary: "Create safe, verified commits from only the intended changes.",
+    description:
+      "Use dev-commit when work is ready to save as a git commit. It guides agents through status and diff inspection, validation, explicit staging, conventional commit messages, and final SHA/status reporting without including unrelated local changes.",
+    useCases: [
+      "Commit finished work without sweeping in unrelated files",
+      "Stage only the intended paths after reviewing diffs",
+      "Record validation evidence and a conventional commit message",
+    ],
+    relatedAgents: ["Claude Code", "Codex", "Cursor", "opencode"],
+  },
+  {
     name: "dev-worktree",
     title: "Dev Worktree",
     category: "Workflow",
@@ -272,6 +286,20 @@ export const builtInSkills: BuiltInSkill[] = [
       "Review work before push",
       "Find integration risks and missing tests",
       "Check final design and implementation alignment",
+    ],
+    relatedAgents: ["Claude Code", "Codex", "Cursor", "opencode"],
+  },
+  {
+    name: "dev-pr",
+    title: "Dev PR",
+    category: "Workflow",
+    summary: "Publish a reviewed feature branch for code review.",
+    description:
+      "Use dev-pr after implementation, testing, and final review are complete. It syncs with the remote base branch, handles rebase conflicts carefully, reruns validation, pushes safely, and opens or updates the host review request.",
+    useCases: [
+      "Rebase a ready feature branch before review",
+      "Push safely after validation",
+      "Open or update a PR, merge request, or equivalent with clear status and risks",
     ],
     relatedAgents: ["Claude Code", "Codex", "Cursor", "opencode"],
   },

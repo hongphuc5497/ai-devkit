@@ -32,6 +32,10 @@ const mockSelect: any = vi.fn();
 
 const mockTtyWriterSend = vi.fn<(location: any, message: string) => Promise<void>>().mockResolvedValue(undefined);
 const mockKillAgent = vi.fn<(...args: any[]) => Promise<any>>();
+const { mockEnableDebug, mockDebugLogger } = vi.hoisted(() => ({
+  mockEnableDebug: vi.fn(),
+  mockDebugLogger: vi.fn(),
+}));
 let restoreStdin: (() => void) | undefined;
 
 const mockGroupStore: any = {
@@ -79,6 +83,7 @@ vi.mock('@ai-devkit/agent-manager', () => ({
   CodexAdapter: vi.fn(),
   CopilotAdapter: vi.fn(),
   GeminiCliAdapter: vi.fn(),
+  GrokCliAdapter: vi.fn(),
   OpenCodeAdapter: vi.fn(),
   PiAdapter: vi.fn(),
   TerminalFocusManager: vi.fn(function () { return mockFocusManager; }),
@@ -105,6 +110,7 @@ vi.mock('@ai-devkit/agent-manager', () => ({
     codex:      { command: 'codex',    matches: () => true },
     copilot:    { command: 'copilot',  matches: () => true },
     gemini_cli: { command: 'gemini',   matches: () => true },
+    grok_cli:   { command: 'grok',     matches: () => true },
     opencode:   { command: 'opencode', matches: () => true },
     pi:         { command: 'pi',       matches: () => true },
   },
@@ -127,6 +133,11 @@ vi.mock('../../util/terminal-ui.js', () => ({
     breakline: vi.fn(),
     spinner: vi.fn(() => mockSpinner),
   },
+}));
+
+vi.mock('../../util/debug.js', () => ({
+  enableDebug: () => mockEnableDebug(),
+  createLogger: () => mockDebugLogger,
 }));
 
 vi.mock('../../services/agent/agent.service.js', async (importOriginal) => {
@@ -259,8 +270,18 @@ describe('agent command', () => {
     await program.parseAsync(['node', 'test', 'agent', 'list', '--json']);
 
     expect(AgentManager).toHaveBeenCalled();
-    expect(mockManager.registerAdapter).toHaveBeenCalledTimes(6);
+    expect(mockManager.registerAdapter).toHaveBeenCalledTimes(7);
     expect(logSpy).toHaveBeenCalledWith(JSON.stringify(agents, null, 2));
+  });
+
+  it('enables debug logging when starting an agent with --debug', async () => {
+    const program = new Command();
+    registerAgentCommand(program);
+
+    await program.parseAsync(['node', 'test', 'agent', 'start', '--type', 'claude', '--name', 'agent1', '--debug']);
+
+    expect(mockEnableDebug).toHaveBeenCalledTimes(1);
+    expect(ui.success).toHaveBeenCalledWith('Agent "agent1" started (claude, PID 12345)');
   });
 
   it('shows info when no agents are running', async () => {
@@ -392,6 +413,31 @@ Waiting on user input`,
     expect(mockSpinner.start).toHaveBeenCalled();
     expect(mockFocusManager.findTerminal).toHaveBeenCalledWith(10);
     expect(mockFocusManager.focusTerminal).toHaveBeenCalled();
+    expect(mockSpinner.succeed).toHaveBeenCalledWith('Focused repo-a!');
+  });
+
+  it('enables debug logging and wires a terminal trace when opening with --debug', async () => {
+    const agent = {
+      name: 'repo-a',
+      status: AgentStatus.WAITING,
+      summary: 'A',
+      lastActive: new Date(),
+      pid: 10,
+    };
+    mockManager.listAgents.mockResolvedValue([agent]);
+    mockManager.resolveAgent.mockReturnValue(agent);
+    mockFocusManager.findTerminal.mockResolvedValue({ type: 'wezterm', identifier: '7' });
+    mockFocusManager.focusTerminal.mockResolvedValue(true);
+
+    const program = new Command();
+    registerAgentCommand(program);
+    await program.parseAsync(['node', 'test', 'agent', 'open', 'repo-a', '--debug']);
+
+    expect(mockEnableDebug).toHaveBeenCalledTimes(1);
+    // A debug logger callback is passed into TerminalFocusManager so its
+    // matching/focus decision path can be inspected.
+    expect(TerminalFocusManager).toHaveBeenCalledWith(expect.any(Function));
+    expect(mockFocusManager.findTerminal).toHaveBeenCalledWith(10);
     expect(mockSpinner.succeed).toHaveBeenCalledWith('Focused repo-a!');
   });
 

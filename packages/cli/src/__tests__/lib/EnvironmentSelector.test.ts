@@ -119,6 +119,32 @@ describe('EnvironmentSelector', () => {
       expect(getMcpConfigPath('kilocode')).toBe('.kilo/kilo.jsonc');
     });
 
+    it('includes Grok with project and global skill paths', () => {
+      expect(isValidEnvironmentCode('grok')).toBe(true);
+      expect(getEnvironment('grok')).toMatchObject({
+        code: 'grok',
+        name: 'Grok',
+        skillPath: '.grok/skills',
+        globalSkillPath: '.grok/skills',
+      });
+      expect(getSkillPath('grok')).toBe('.grok/skills');
+      expect(getGlobalSkillPath('grok')).toBe('.grok/skills');
+      expect(getMcpConfigPath('grok')).toBeUndefined();
+    });
+
+    it('includes Antigravity CLI with the agy project and global skill paths', () => {
+      expect(isValidEnvironmentCode('antigravity-cli')).toBe(true);
+      expect(getEnvironment('antigravity-cli')).toMatchObject({
+        code: 'antigravity-cli',
+        name: 'Antigravity CLI',
+        skillPath: '.agents/skills',
+        globalSkillPath: '.gemini/config/skills',
+      });
+      expect(getSkillPath('antigravity-cli')).toBe('.agents/skills');
+      expect(getGlobalSkillPath('antigravity-cli')).toBe('.gemini/config/skills');
+      expect(getMcpConfigPath('antigravity-cli')).toBeUndefined();
+    });
+
     it('includes OpenCode with project skills, global skills, and MCP', () => {
       expect(isValidEnvironmentCode('opencode')).toBe(true);
       expect(getEnvironment('opencode')).toMatchObject({

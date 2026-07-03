@@ -53,6 +53,11 @@ These environments have stable setup integrations.
 - `~/.codex/skills/` — Global skills
 - `.codex/config.toml` — Project-level MCP server configuration
 
+### [Grok Build CLI](https://x.ai/cli)
+**What AI DevKit provides:**
+- `.grok/skills/` — Project-level skills
+- `~/.grok/skills/` — Global skills
+
 ### [opencode](https://opencode.ai/)
 **What AI DevKit provides:**
 - `AGENTS.md` — opencode [custom instructions](https://opencode.ai/docs/rules/)
@@ -64,6 +69,11 @@ These environments have stable setup integrations.
 **What AI DevKit provides:**
 - `.agent/skills/` — Project-level skills
 - `~/.gemini/antigravity/skills/` — Global skills
+
+### [Antigravity CLI](https://antigravity.google/)
+**What AI DevKit provides:**
+- `.agents/skills/` — Project-level skills
+- `~/.gemini/config/skills/` — Global skills
 
 ### [Junie](https://www.jetbrains.com/junie/)
 **What AI DevKit provides:**

@@ -40,7 +40,11 @@ const mockTerminalFocusManager = {
 };
 const mockTelegramAdapter = {
     onMessage: vi.fn(),
+    onCallback: vi.fn(),
     sendMessage: vi.fn<() => Promise<void>>(),
+    sendInlineKeyboard: vi.fn<() => Promise<number>>(),
+    editInlineKeyboard: vi.fn<() => Promise<void>>(),
+    answerCallback: vi.fn<() => Promise<void>>(),
 };
 const mockChannelService = {
     resolveConnectChannelName: vi.fn((name?: string) => name ?? 'telegram'),
@@ -70,11 +74,13 @@ vi.mock('@ai-devkit/agent-manager', () => ({
     CodexAdapter: vi.fn(),
     CopilotAdapter: vi.fn(),
     GeminiCliAdapter: vi.fn(),
+    GrokCliAdapter: vi.fn(),
     PiAdapter: vi.fn(),
     TerminalFocusManager: vi.fn(function () { return mockTerminalFocusManager; }),
     TtyWriter: {
         send: vi.fn(),
     },
+    readLatestAgentRequest: vi.fn().mockReturnValue(null),
 }), { virtual: true });
 
 vi.mock('@inquirer/prompts', () => ({
@@ -595,7 +601,7 @@ describe('channel command', () => {
             agentPid: 4321,
             bridgePid: process.pid,
         }));
-        expect(mockAgentManager.registerAdapter).toHaveBeenCalledTimes(5);
+        expect(mockAgentManager.registerAdapter).toHaveBeenCalledTimes(6);
         expect(mockChannelService.registerBridge.mock.invocationCallOrder[0])
             .toBeLessThan(mockChannelManager.startAll.mock.invocationCallOrder[0]);
 

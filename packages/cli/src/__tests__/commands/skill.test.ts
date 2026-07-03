@@ -87,6 +87,14 @@ describe('skill command', () => {
       global: undefined,
       environments: undefined,
     });
+    expect(mockAddSkill).toHaveBeenCalledWith('codeaholicguy/ai-devkit', 'agent-management', {
+      global: undefined,
+      environments: undefined,
+    });
+    expect(mockAddSkill).toHaveBeenCalledWith('codeaholicguy/ai-devkit', 'dev-commit', {
+      global: undefined,
+      environments: undefined,
+    });
     expect(mockAddSkill).toHaveBeenCalledWith('codeaholicguy/ai-devkit', 'dev-worktree', {
       global: undefined,
       environments: undefined,
@@ -96,6 +104,10 @@ describe('skill command', () => {
       environments: undefined,
     });
     expect(mockAddSkill).toHaveBeenCalledWith('codeaholicguy/ai-devkit', 'dev-review', {
+      global: undefined,
+      environments: undefined,
+    });
+    expect(mockAddSkill).toHaveBeenCalledWith('codeaholicguy/ai-devkit', 'dev-pr', {
       global: undefined,
       environments: undefined,
     });

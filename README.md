@@ -171,12 +171,13 @@ Agent:  Audits the diff against the design doc — scope creep,
 
 ## What changes in agent behavior
 
-The flow above is powered by eight built-in skills, each addressing a failure mode developers see in real AI coding sessions:
+The flow above is powered by nine built-in skills, each addressing a failure mode developers see in real AI coding sessions:
 
 | Failure mode | AI DevKit behavior |
 |--------------|--------------------|
 | Agent starts coding too early | `dev-lifecycle` forces requirements, design, planning, implementation, tests, and review |
 | Agent says "done" without proof | `verify` blocks completion claims without fresh test/build evidence |
+| Agent commits unrelated local changes | `dev-commit` checks diffs, stages explicit paths, validates, and reports the SHA/status |
 | Agent forgets project decisions | `memory` gives it a local, searchable knowledge base across sessions and projects |
 | New behavior ships without tests | `tdd` pushes test-first implementation |
 | Debugging becomes guess-and-patch | `structured-debug` makes it reproduce, hypothesize, fix, and verify |
@@ -195,6 +196,7 @@ One `.ai-devkit.json` configures all of them. Add a new agent to your team witho
 | [Claude Code](https://www.anthropic.com/claude-code) | yes | yes |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) | yes | yes |
 | [Codex CLI](https://github.com/openai/codex) | yes | yes |
+| [Grok Build CLI](https://x.ai/cli) | yes | yes |
 | [Junie](https://www.jetbrains.com/junie/) | yes | — |
 | [Cline](https://cline.bot/) | yes | — |
 | [Devin](https://devin.ai/) | yes | — |
