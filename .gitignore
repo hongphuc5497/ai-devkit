@@ -15,3 +15,6 @@ coverage/
 .github/prompts/
 .github/skills/
 .worktrees/
+
+# Agent Ops runtime directory (managed by agent-ops init).
+.ai/
